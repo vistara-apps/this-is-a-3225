@@ -28,7 +28,7 @@ jobs:
         NODE_OPTIONS: --max-old-space-size=4096
         
     - name: Deploy to Vercel (Production)
-      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && secrets.VERCEL_TOKEN != ''
+      if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && vars.VERCEL_ENABLED == 'true'
       uses: amondnet/vercel-action@v25
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -38,7 +38,7 @@ jobs:
       continue-on-error: true
         
     - name: Deploy to Vercel (Preview)
-      if: (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master') && secrets.VERCEL_TOKEN != ''
+      if: (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master') && vars.VERCEL_ENABLED == 'true'
       uses: amondnet/vercel-action@v25
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -48,11 +48,11 @@ jobs:
       continue-on-error: true
         
     - name: Skip Vercel Deployment
-      if: secrets.VERCEL_TOKEN == ''
-      run: echo "⚠️ Vercel deployment skipped - VERCEL_TOKEN secret not configured"
+      if: vars.VERCEL_ENABLED != 'true'
+      run: echo "⚠️ Vercel deployment skipped - VERCEL_ENABLED variable not set to 'true'"
         
     - name: Comment PR with deployment URL
-      if: github.event_name == 'pull_request' && secrets.VERCEL_TOKEN != ''
+      if: github.event_name == 'pull_request' && vars.VERCEL_ENABLED == 'true'
       uses: actions/github-script@v7
       with:
         script: |
@@ -74,7 +74,7 @@ jobs:
           }
           
     - name: Comment PR without deployment
-      if: github.event_name == 'pull_request' && secrets.VERCEL_TOKEN == ''
+      if: github.event_name == 'pull_request' && vars.VERCEL_ENABLED != 'true'
       uses: actions/github-script@v7
       with:
         script: |
@@ -83,8 +83,8 @@ jobs:
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `✅ **Build Successful!**
-            \n\n🔧 The application built successfully but Vercel deployment was skipped (no deployment secrets configured).
-            \n\n📦 To enable Vercel deployment, configure the following repository secrets:
+            \n\n🔧 The application built successfully but Vercel deployment was skipped.
+            \n\n📦 To enable Vercel deployment, set the repository variable \`VERCEL_ENABLED\` to \`true\` and configure the following repository secrets:
             \n- \`VERCEL_TOKEN\`
             \n- \`VERCEL_ORG_ID\`
             \n- \`VERCEL_PROJECT_ID\``
